@@ -9,3 +9,15 @@ node_modules
 !.env.test
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Devenv
+.devenv*
+.devcontainer.json
+devenv.local.nix
+devenv.local.yaml
+
+# direnv
+.direnv
+
+# pre-commit
+.pre-commit-config.yaml
