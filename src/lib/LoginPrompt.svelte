@@ -11,7 +11,7 @@
 		type="button"
 		aria-label="Kirjaudu"
 		on:click={login}
-		style="background:none;border:none;padding:0;cursor:pointer;color: #52d3d8;"
+		style="background:none;border:none;padding:0;cursor:pointer;color: #F2CD37;"
 	>
 		<FaSignInAlt size="10vw" />
 		<h1 style="text-transform:uppercase">Avaa tästä</h1>

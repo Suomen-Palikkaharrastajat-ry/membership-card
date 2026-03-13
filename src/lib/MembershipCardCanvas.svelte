@@ -70,21 +70,21 @@
 	});
 
 	let figureImg: HTMLImageElement | null = null;
-	let spyImg: HTMLImageElement | null = null;
+	let logoImg: HTMLImageElement | null = null;
 
-	// Preload figure.png and spy.svg
+	// Preload figure.png and logo.svg
 
 	onMount(() => {
 		figureImg = new window.Image();
 		figureImg.src = 'figure.png';
 		figureImg.onload = () => drawCanvas();
-		spyImg = new window.Image();
-		spyImg.src = 'spy.svg';
-		spyImg.onload = () => drawCanvas();
+		logoImg = new window.Image();
+		logoImg.src = 'logo.svg';
+		logoImg.onload = () => drawCanvas();
 	});
 
-	// Redraw canvas only when user, tokenDetails, figureImg, or spyImg change
-	$: if (canvas && user && tokenDetails && figureImg && spyImg && fontsLoaded) {
+	// Redraw canvas only when user, tokenDetails, figureImg, or logoImg change
+	$: if (canvas && user && tokenDetails && figureImg && logoImg && fontsLoaded) {
 		drawCanvas();
 	}
 
@@ -100,6 +100,7 @@
 		canvas.style.width = `${rect.width}px`;
 		canvas.style.height = `${rect.width / 1.58}px`;
 		ctx.fillStyle = '3887be';
+		// ctx.fillStyle = '#ffffff';
 		const cornerRadius = 20 / dpr;
 		const width = rect.width;
 		const height = rect.height;
@@ -116,7 +117,9 @@
 		ctx.lineTo(0, cornerRadius);
 		ctx.quadraticCurveTo(0, 0, cornerRadius, 0);
 		ctx.closePath();
-		ctx.fillStyle = '#52d3d8';
+		//ctx.fillStyle = '#52d3d8';
+		//ctx.fillStyle = '#F2CD37';
+		ctx.fillStyle = '#ffffff';
 		ctx.fill();
 
 		// Draw left yellow circle (only top right quarter visible)
@@ -129,7 +132,8 @@
 		ctx.clip();
 		ctx.beginPath();
 		ctx.arc(leftCircleX, leftCircleY, leftCircleRadius, 0, Math.PI * 2);
-		ctx.fillStyle = '#f2f597';
+		// ctx.fillStyle = '#f2f597';
+		//ctx.fillStyle = '#000000';
 		ctx.fill();
 		ctx.restore();
 
@@ -146,17 +150,18 @@
 		ctx.clip();
 		ctx.beginPath();
 		ctx.arc(rightCircleX, rightCircleY, rightCircleRadius, 0, Math.PI * 2);
-		ctx.fillStyle = '#3887be';
+		ctx.fillStyle = '#C91A09';
+		ctx.fillStyle = '#F2CD37';
 		ctx.fill();
 		ctx.restore();
 
-		// Draw spy.svg in the lower left corner
-		if (spyImg && spyImg.complete) {
-			const spySize = width * 0.25;
-			const spyScale = spySize / spyImg.width;
-			const spyX = width * 0.025;
-			const spyY = height - spySize + height * 0.08;
-			ctx.drawImage(spyImg, spyX, spyY, spySize, spyImg.height * spyScale);
+		// Draw logo.svg in the lower left corner
+		if (logoImg && logoImg.complete) {
+			const logoSize = width * 0.25 * 1.5;
+			const logoScale = logoSize / logoImg.width;
+			const logoX = width * 0.025;
+			const logoY = height - logoSize + height * -0.388;
+			ctx.drawImage(logoImg, logoX, logoY, logoSize, logoImg.height * logoScale);
 		}
 
 		// Draw figure.png on the right side of the card
@@ -171,29 +176,29 @@
 
 		const baseFontSize = width / 20;
 		ctx.font = `700 ${baseFontSize * 1}px 'Outfit', sans-serif`;
-		ctx.fillStyle = 'white';
 		ctx.textAlign = 'left';
-		ctx.fillStyle = '#f2f597';
-		ctx.fillText('JÄSENKORTTI', width * 0.62, height * 0.15);
+		ctx.fillStyle = 'black';
+		ctx.fillText('JÄSENKORTTI', width * 0.52, height * 0.145);
 		ctx.font = `700 ${baseFontSize * 1.2}px 'Outfit', sans-serif`;
-		ctx.fillStyle = '#ffffff';
-		ctx.fillStyle = 'white';
+		ctx.fillStyle = 'black';
+		ctx.textAlign = 'center';
+		ctx.fillText(`${tokenDetails?.name.split(' ', 2)[0]}`, width * 0.25, height * 0.475);
+		ctx.fillText(`${tokenDetails?.name.split(' ', 2)[1]}`, width * 0.25, height * 0.6);
 		ctx.textAlign = 'left';
-		ctx.fillText(`${tokenDetails?.name?.toUpperCase()}`, width * 0.04, height * 0.275);
 		ctx.font = `700 ${baseFontSize * 0.6}px 'Outfit', sans-serif`;
 		ctx.fillStyle = '#000000';
 		ctx.fillText(
 			`Voimassaolo päättyy: ${tokenDetails?.expiration_date || ''}`,
-			width * 0.04,
-			height * 0.35
+			width * 0.03,
+			height * 0.925
 		);
 		ctx.fillText(
 			`Liittymispäivä: ${tokenDetails?.effective_date || ''}`,
-			width * 0.04,
-			height * 0.425
+			width * 0.03,
+			height * 0.850
 		);
-		ctx.fillText(`Discord: ${tokenDetails?.discord || ''}`, width * 0.04, height * 0.6);
-		ctx.fillText(`Bricklink: ${tokenDetails?.bricklink || ''}`, width * 0.04, height * 0.525);
+		//ctx.fillText(`Discord: ${tokenDetails?.discord || ''}`, width * 0.04, height * 0.6);
+		ctx.fillText(`Bricklink: ${tokenDetails?.bricklink || ''}`, width * 0.03, height * 0.775);
 	}
 </script>
 

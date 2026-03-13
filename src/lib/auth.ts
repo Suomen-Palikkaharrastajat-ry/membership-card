@@ -4,7 +4,7 @@ import { browser } from '$app/environment';
 // Configuration - read from environment variables
 const authority =
 	import.meta.env.OIDC_AUTHORITY ||
-	'https://lemur-14.cloud-iam.com/auth/realms/suomenpalikkayhteisory';
+	'https://lemur-14.cloud-iam.com/auth/realms/suomenpalikkaharrastajatry';
 const client_id = import.meta.env.OIDC_CLIENT_ID || 'd31f9cee-fbe6-4672-8085-76500eb25691';
 const redirect_uri =
 	import.meta.env.OIDC_REDIRECT_URI ||
