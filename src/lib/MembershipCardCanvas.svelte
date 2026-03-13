@@ -195,7 +195,7 @@
 		ctx.fillText(
 			`Liittymispäivä: ${tokenDetails?.effective_date || ''}`,
 			width * 0.03,
-			height * 0.850
+			height * 0.85
 		);
 		//ctx.fillText(`Discord: ${tokenDetails?.discord || ''}`, width * 0.04, height * 0.6);
 		ctx.fillText(`Bricklink: ${tokenDetails?.bricklink || ''}`, width * 0.03, height * 0.775);
