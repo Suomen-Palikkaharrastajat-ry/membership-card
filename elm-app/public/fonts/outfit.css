@@ -6,3 +6,27 @@
   font-weight: 100 900;
   src: url('/fonts/Outfit-VariableFont_wght.ttf') format('truetype');
 }
+
+@font-face {
+  font-display: swap;
+  font-family: 'Outfit400';
+  font-style: normal;
+  font-weight: 400;
+  src: url('/fonts/Outfit-VariableFont_wght.ttf') format('truetype');
+}
+
+@font-face {
+  font-display: swap;
+  font-family: 'Outfit500';
+  font-style: normal;
+  font-weight: 500;
+  src: url('/fonts/Outfit-VariableFont_wght.ttf') format('truetype');
+}
+
+@font-face {
+  font-display: swap;
+  font-family: 'Outfit700';
+  font-style: normal;
+  font-weight: 700;
+  src: url('/fonts/Outfit-VariableFont_wght.ttf') format('truetype');
+}

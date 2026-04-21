@@ -1,38 +1,51 @@
 port module Ports exposing
-    ( clearAuth
-    , initiateLogin
-    , memberInfoReceived
-    , renderCard
+    ( callbackParams
+    , clearCallbackUrl
+    , clearStoredMemberInfo
+    , getCallbackParams
+    , persistMemberInfo
+    , startLogin
+    , startLogout
     )
 
-import Json.Decode as Json
+import Json.Encode as Encode
+import Types exposing (CallbackParams, OidcConfig)
 
 
 
 -- ── Auth ports ────────────────────────────────────────────────────────────────
 
 
-{-| Trigger OIDC login redirect. JS calls userManager.signinRedirect().
+{-| Start OIDC authorization code + PKCE redirect flow.
 -}
-port initiateLogin : () -> Cmd msg
+port startLogin : OidcConfig -> Cmd msg
 
 
-{-| Clear stored MemberInfo from localStorage and sign out via Keycloak.
+{-| Clear persisted member info from localStorage.
 -}
-port clearAuth : () -> Cmd msg
+port clearStoredMemberInfo : () -> Cmd msg
 
 
-{-| Receive MemberInfo JSON from JS after successful OIDC sign-in or page load.
-The value is a JSON object with the five JWT claim fields.
+{-| Persist authenticated member info JSON to localStorage.
 -}
-port memberInfoReceived : (Json.Value -> msg) -> Sub msg
+port persistMemberInfo : Encode.Value -> Cmd msg
 
 
-
--- ── Canvas ports ──────────────────────────────────────────────────────────────
-
-
-{-| Send MemberInfo to JS to draw the membership card on the canvas element.
-The value is a JSON-encoded MemberInfo record.
+{-| Start OIDC end-session redirect at the identity provider.
 -}
-port renderCard : Json.Value -> Cmd msg
+port startLogout : { authority : String, clientId : String, postLogoutRedirectUri : String } -> Cmd msg
+
+
+{-| Request PKCE callback parameters stored in sessionStorage.
+-}
+port getCallbackParams : () -> Cmd msg
+
+
+{-| Receive PKCE callback parameters (code verifier + state) from JS.
+-}
+port callbackParams : (CallbackParams -> msg) -> Sub msg
+
+
+{-| Clear callback URL artifacts without page reload.
+-}
+port clearCallbackUrl : () -> Cmd msg

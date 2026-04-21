@@ -19,7 +19,7 @@ let
   npmDeps = pkgs.fetchNpmDeps {
     name = "membership-card-npm-deps";
     src = patchedSrc;
-    hash = "sha256-2+EEwE8SMZcjdk74hZgEfP2hFCnCVZzZo2CITYsUC3c=";
+    hash = "sha256-24PMNXqfTa4DIuBA92h4K3U88/K01uvT+fGoZmD0leE=";
   };
 in
 pkgs.stdenv.mkDerivation {

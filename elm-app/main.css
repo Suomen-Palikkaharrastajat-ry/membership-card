@@ -10,6 +10,30 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: 'Outfit400';
+  src: url('/fonts/Outfit-VariableFont_wght.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Outfit500';
+  src: url('/fonts/Outfit-VariableFont_wght.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Outfit700';
+  src: url('/fonts/Outfit-VariableFont_wght.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 @theme {
   --font-sans: 'Outfit', system-ui, sans-serif;
 
@@ -83,7 +107,9 @@ button[disabled] {
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
 }
 
-.card-canvas-wrapper canvas {
+.card-canvas-wrapper canvas,
+.card-canvas-wrapper elm-canvas,
+.card-canvas-wrapper .membership-card-canvas {
   display: block;
   width: 100%;
   border: none;

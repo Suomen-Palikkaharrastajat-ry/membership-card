@@ -17,6 +17,6 @@
     "vite-plugin-elm": "^3.0.0"
   },
   "dependencies": {
-    "oidc-client-ts": "^3.3.0"
+    "elm-canvas": "^2.2.4"
   }
 }

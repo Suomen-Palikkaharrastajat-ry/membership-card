@@ -1,14 +1,18 @@
 module Types exposing
     ( AuthState(..)
+    , CallbackParams
+    , CardAssets
     , Flags
     , MemberInfo
     , Model
     , Msg(..)
+    , OidcConfig
     , Page(..)
     , isAuthenticated
     )
 
-import Json.Decode as Json
+import Canvas.Texture exposing (Texture)
+import Http
 
 
 
@@ -21,6 +25,7 @@ type alias Flags =
     , oidcClientId : String
     , oidcRedirectUri : String
     , currentHash : String
+    , currentSearch : String
     }
 
 
@@ -39,6 +44,19 @@ type alias MemberInfo =
     , bricklink : String
     , registrationDate : String
     , paymentDate : String
+    }
+
+
+type alias OidcConfig =
+    { authority : String
+    , clientId : String
+    , redirectUri : String
+    }
+
+
+type alias CallbackParams =
+    { codeVerifier : String
+    , state : String
     }
 
 
@@ -63,12 +81,26 @@ type Page
 
 
 
+-- CARD ASSETS
+
+
+type alias CardAssets =
+    { logo : Maybe Texture
+    , figure : Maybe Texture
+    }
+
+
+
 -- MODEL
 
 
 type alias Model =
     { page : Page
     , authState : AuthState
+    , oidc : OidcConfig
+    , currentSearch : String
+    , callbackError : Maybe String
+    , cardAssets : CardAssets
     }
 
 
@@ -79,5 +111,8 @@ type alias Model =
 type Msg
     = LoginClicked
     | LogoutClicked
-    | MemberInfoReceived Json.Value
-    | AuthCallbackDone
+    | CallbackParamsReceived CallbackParams
+    | GotTokenResponse (Result Http.Error String)
+    | GotUserInfoResponse (Result Http.Error MemberInfo)
+    | LogoTextureLoaded (Maybe Texture)
+    | FigureTextureLoaded (Maybe Texture)

@@ -1,50 +1,26 @@
-{- Membership card application entry point.
-
-   Pages and their purpose:
-
-       Route         Page           Description
-       ────────────  ─────────────  ──────────────────────────────────────────
-       #/            PageHome       Login prompt or membership card canvas
-       #/callback    PageCallback   OIDC redirect landing; JS completes sign-in
-       (other)       PageNotFound   404 fallback
-
-   Auth flow:
-       1. JS reads localStorage "mc_member_info" and passes it as a flag.
-       2. Elm restores AuthState from the flag via Auth.restoreAuthFromFlags.
-       3. On PageHome + Authenticated: Elm sends renderCard port → JS draws canvas.
-       4. Login: Elm sends initiateLogin port → JS calls userManager.signinRedirect().
-       5. Callback: JS calls signinCallback(), extracts JWT claims, sends them
-          via memberInfoReceived port → Elm updates auth state + sends renderCard.
-       6. Logout: Elm sends clearAuth port → JS signoutRedirect + clears storage.
-
--}
-
-
 module Main exposing (main)
 
 import Auth
 import Browser
-import Html exposing (Html, a, button, canvas, div, p, span, text)
-import Html.Attributes exposing (class, href, id)
+import CardCanvas
+import Html exposing (Html, a, button, div, p, span, text)
+import Html.Attributes exposing (class, href)
 import Html.Events exposing (onClick)
 import I18n
-import Json.Decode as Json
 import Json.Encode as Encode
 import Ports
 import Route exposing (Route(..))
+import String
 import Types
     exposing
         ( AuthState(..)
+        , CardAssets
         , Flags
         , MemberInfo
         , Model
         , Msg(..)
         , Page(..)
         )
-
-
-
--- MAIN
 
 
 main : Program Flags Model Msg
@@ -55,10 +31,6 @@ main =
         , view = view
         , subscriptions = subscriptions
         }
-
-
-
--- INIT
 
 
 init : Flags -> ( Model, Cmd Msg )
@@ -78,64 +50,122 @@ init flags =
                 RouteNotFound ->
                     PageNotFound
 
-        cmd =
-            case authState of
-                Authenticated info ->
-                    Ports.renderCard (encodeMemberInfo info)
+        oidc =
+            { authority = flags.oidcAuthority
+            , clientId = flags.oidcClientId
+            , redirectUri = flags.oidcRedirectUri
+            }
 
-                NotAuthenticated ->
+        initialModel =
+            { page = page
+            , authState = authState
+            , oidc = oidc
+            , currentSearch = flags.currentSearch
+            , callbackError = Nothing
+            , cardAssets =
+                { logo = Nothing
+                , figure = Nothing
+                }
+            }
+
+        initCmd =
+            case page of
+                PageCallback ->
+                    Ports.getCallbackParams ()
+
+                _ ->
                     Cmd.none
     in
-    ( { page = page, authState = authState }, cmd )
-
-
-
--- UPDATE
+    ( initialModel, initCmd )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         LoginClicked ->
-            ( model, Ports.initiateLogin () )
+            ( { model | callbackError = Nothing }
+            , Ports.startLogin model.oidc
+            )
 
         LogoutClicked ->
-            ( { model | authState = NotAuthenticated }, Ports.clearAuth () )
+            ( { model | authState = NotAuthenticated, page = PageHome, callbackError = Nothing }
+            , Cmd.batch
+                [ Ports.clearStoredMemberInfo ()
+                , Ports.startLogout
+                    { authority = model.oidc.authority
+                    , clientId = model.oidc.clientId
+                    , postLogoutRedirectUri = logoutRedirectUri model.oidc.redirectUri
+                    }
+                ]
+            )
 
-        MemberInfoReceived value ->
-            case Json.decodeValue Auth.decodeMemberInfo value of
+        CallbackParamsReceived params ->
+            case Auth.parseCallbackQuery model.currentSearch of
+                Nothing ->
+                    callbackFailed model
+
+                Just query ->
+                    if String.isEmpty params.codeVerifier || String.isEmpty params.state then
+                        callbackFailed model
+
+                    else if params.state /= query.state then
+                        callbackFailed model
+
+                    else
+                        ( model, Auth.fetchAccessToken model.oidc query.code params.codeVerifier )
+
+        GotTokenResponse result ->
+            case result of
+                Ok accessToken ->
+                    ( model, Auth.fetchUserInfo model.oidc.authority accessToken )
+
+                Err _ ->
+                    callbackFailed model
+
+        GotUserInfoResponse result ->
+            case result of
                 Ok info ->
-                    ( { model | authState = Authenticated info, page = PageHome }
-                    , Ports.renderCard (encodeMemberInfo info)
+                    ( { model | authState = Authenticated info, page = PageHome, callbackError = Nothing }
+                    , Cmd.batch
+                        [ Ports.persistMemberInfo (encodeMemberInfo info)
+                        , Ports.clearCallbackUrl ()
+                        ]
                     )
 
                 Err _ ->
-                    ( { model | authState = NotAuthenticated, page = PageHome }
-                    , Cmd.none
-                    )
+                    callbackFailed model
 
-        AuthCallbackDone ->
-            ( { model | page = PageHome }, Cmd.none )
+        LogoTextureLoaded maybeTexture ->
+            let
+                oldAssets =
+                    model.cardAssets
 
+                cardAssets =
+                    { oldAssets | logo = maybeTexture }
+            in
+            ( { model | cardAssets = cardAssets }, Cmd.none )
 
+        FigureTextureLoaded maybeTexture ->
+            let
+                oldAssets =
+                    model.cardAssets
 
--- SUBSCRIPTIONS
+                cardAssets =
+                    { oldAssets | figure = maybeTexture }
+            in
+            ( { model | cardAssets = cardAssets }, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Ports.memberInfoReceived MemberInfoReceived
-
-
-
--- VIEW
+    Ports.callbackParams CallbackParamsReceived
 
 
 view : Model -> Html Msg
 view model =
     case model.page of
         PageHome ->
-            viewHome model.authState
+            viewHome model
 
         PageCallback ->
             viewCallback
@@ -144,18 +174,18 @@ view model =
             viewNotFound
 
 
-viewHome : AuthState -> Html Msg
-viewHome authState =
-    case authState of
+viewHome : Model -> Html Msg
+viewHome model =
+    case model.authState of
         NotAuthenticated ->
-            viewLoginPrompt
+            viewLoginPrompt model.callbackError
 
-        Authenticated _ ->
-            viewCard
+        Authenticated info ->
+            viewCard model.cardAssets info
 
 
-viewLoginPrompt : Html Msg
-viewLoginPrompt =
+viewLoginPrompt : Maybe String -> Html Msg
+viewLoginPrompt maybeError =
     div
         [ class "min-h-screen flex flex-col items-center justify-center gap-8 p-8" ]
         [ div [ class "flex flex-col items-center gap-2" ]
@@ -163,6 +193,12 @@ viewLoginPrompt =
             , span [ class "type-body text-text-muted" ]
                 [ text "Suomen Palikkaharrastajat ry" ]
             ]
+        , case maybeError of
+            Just err ->
+                p [ class "type-body text-brand-yellow" ] [ text err ]
+
+            Nothing ->
+                text ""
         , button
             [ class "btn-primary flex items-center gap-2 type-body px-6 py-3"
             , onClick LoginClicked
@@ -171,12 +207,18 @@ viewLoginPrompt =
         ]
 
 
-viewCard : Html Msg
-viewCard =
+viewCard : CardAssets -> MemberInfo -> Html Msg
+viewCard assets memberInfo =
     div
         [ class "min-h-screen flex flex-col items-center justify-center gap-6 p-8" ]
         [ div [ class "card-canvas-wrapper" ]
-            [ canvas [ id "membership-card" ] [] ]
+            [ CardCanvas.view
+                { assets = assets
+                , onLogoLoaded = LogoTextureLoaded
+                , onFigureLoaded = FigureTextureLoaded
+                }
+                memberInfo
+            ]
         , button
             [ class "type-body-small text-text-muted hover:text-text-on-dark transition-colors"
             , onClick LogoutClicked
@@ -205,11 +247,26 @@ viewNotFound =
         ]
 
 
+callbackFailed : Model -> ( Model, Cmd Msg )
+callbackFailed model =
+    ( { model | authState = NotAuthenticated, page = PageHome, callbackError = Just I18n.authCallbackError }
+    , Cmd.batch
+        [ Ports.clearStoredMemberInfo ()
+        , Ports.clearCallbackUrl ()
+        ]
+    )
 
--- HELPERS
+
+logoutRedirectUri : String -> String
+logoutRedirectUri redirectUri =
+    if String.endsWith "#/callback" redirectUri then
+        String.dropRight 10 redirectUri ++ "#/"
+
+    else
+        redirectUri
 
 
-encodeMemberInfo : MemberInfo -> Json.Value
+encodeMemberInfo : MemberInfo -> Encode.Value
 encodeMemberInfo info =
     Encode.object
         [ ( "name", Encode.string info.name )
