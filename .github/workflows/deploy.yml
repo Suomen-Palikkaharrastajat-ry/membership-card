@@ -1,9 +1,8 @@
-name: Deploy to GitHub Pages
+name: Deploy
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -12,33 +11,59 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          submodules: true
 
-      - name: Install dependencies
-        run: npm ci
+      - uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Lint
-        run: npm run lint
+      - uses: cachix/cachix-action@v16
+        with:
+          name: palikkaharrastajat
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+          extraPullNames: devenv
+
+      - name: Install devenv
+        run: nix profile install "github:cachix/devenv/v2.0.6"
+
+      - name: Restore Elm cache
+        id: elm-cache-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.elm
+            elm-app/elm-stuff
+          key: elm-${{ runner.os }}-${{ hashFiles('elm-app/elm.json') }}
+          restore-keys: elm-${{ runner.os }}-
+
+      - name: Run tests
+        run: devenv shell --profile ci -- make test
 
       - name: Build
-        run: npm run build
+        run: devenv shell --profile ci -- make dist-ci
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Save Elm cache
+        if: steps.elm-cache-restore.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.elm
+            elm-app/elm-stuff
+          key: ${{ steps.elm-cache-restore.outputs.cache-primary-key }}
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
         with:
           path: ./build
 
@@ -48,7 +73,18 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  verify:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/smoke-test.sh
+        env:
+          SITE_URL: ${{ needs.deploy.outputs.page_url }}

@@ -1,23 +1,37 @@
-.DS_Store
-node_modules
-/build
-/.svelte-kit
-/package
+# --- Environment / local ---
 .env
 .env.*
 !.env.example
 !.env.test
-vite.config.js.timestamp-*
-vite.config.ts.timestamp-*
-
-# Devenv
-.devenv*
 .devcontainer.json
+.devenv*
 devenv.local.nix
 devenv.local.yaml
-
-# direnv
 .direnv
 
-# pre-commit
-.pre-commit-config.yaml
+# --- Dependencies ---
+node_modules
+node_modules/
+elm-app/node_modules/
+elm-app/packages
+
+# --- Elm ---
+.vite/
+elm-app/elm-stuff/
+elm-app/.elm-tailwind/
+
+# --- Build / generated ---
+/build
+elm-app/vite.config.js.timestamp-*
+
+# --- Editor & OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# --- Misc / local ---
+.claude/
+TODO*

@@ -1,0 +1,28 @@
+{
+  "name": "Jäsenkortti — Suomen Palikkaharrastajat ry",
+  "short_name": "Jäsenkortti",
+  "description": "Suomen Palikkaharrastajat ry:n digitaalinen jäsenkortti",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#05131D",
+  "theme_color": "#05131D",
+  "lang": "fi",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
