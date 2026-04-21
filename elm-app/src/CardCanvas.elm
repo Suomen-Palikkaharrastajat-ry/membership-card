@@ -69,10 +69,34 @@ textureSources options =
 
 baseRenderables : List Canvas.Renderable
 baseRenderables =
+    let
+        yellowRadius =
+            180
+
+        blackRadius =
+            185
+
+        redRadius =
+            220
+
+        yellowCenterX =
+            cardWidth + 60 - (yellowRadius / 2)
+
+        blackCenterX =
+            cardWidth - (blackRadius / 2)
+
+        -- Keep only ~1/4 inside the right edge, but move upward so it is visible.
+        redCenterX =
+            cardWidth + (redRadius / 2)
+
+        redCenterY =
+            redRadius / 3
+    in
     [ Canvas.clear ( 0, 0 ) cardWidth cardHeight
     , Canvas.shapes [ fill white ] [ Canvas.rect ( 0, 0 ) cardWidth cardHeight ]
-    , Canvas.shapes [ fill brandYellow ] [ Canvas.circle ( cardWidth + 60, cardHeight / 2 ) 180 ]
-    , Canvas.shapes [ fill brandBlack ] [ Canvas.circle ( cardWidth, cardHeight + 30 ) 185 ]
+    , Canvas.shapes [ fill blacktronRed ] [ Canvas.circle ( redCenterX, redCenterY ) redRadius ]
+    , Canvas.shapes [ fill brandYellow ] [ Canvas.circle ( yellowCenterX, cardHeight / 2 ) yellowRadius ]
+    , Canvas.shapes [ fill brandBlack ] [ Canvas.circle ( blackCenterX, cardHeight + 30 ) blackRadius ]
     ]
 
 
@@ -305,6 +329,11 @@ brandYellow =
 brandBlack : Color.Color
 brandBlack =
     Color.rgb255 5 19 29
+
+
+blacktronRed : Color.Color
+blacktronRed =
+    Color.rgb255 201 26 9
 
 
 mutedText : Color.Color
