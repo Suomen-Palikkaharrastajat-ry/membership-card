@@ -5,7 +5,9 @@ help: ## Show available targets
 # ── Vendor / submodules ──────────────────────────────────────────────────────
 
 .PHONY: vendor
-vendor: ## Init and update all git submodules to their pinned commits
+vendor: elm-app/packages ## Init and update all git submodules to their pinned commits
+
+elm-app/packages:
 	@# In CI environments (GitHub Actions) SSH access is unavailable;
 	@# rewrite git@github.com: to https://github.com/ so submodules clone via HTTPS.
 	@[ -z "$$CI" ] || git config --global url."https://github.com/".insteadOf "git@github.com:"
@@ -43,12 +45,12 @@ ELM_PACKAGE_SOURCES := $(shell find vendor/master-builder/packages -name '*.elm'
 .PHONY: elm-tailwind-gen
 elm-tailwind-gen: elm-app/.elm-tailwind/.stamp ## Generate typed Tailwind Elm modules into elm-app/.elm-tailwind/
 
-elm-app/.elm-tailwind/.stamp: elm-app/elm.json elm-app/vite.config.mjs elm-app/main.css $(ELM_APP_SOURCES) $(ELM_PACKAGE_SOURCES)
+elm-app/.elm-tailwind/.stamp: elm-app/packages elm-app/elm.json elm-app/vite.config.mjs elm-app/main.css $(ELM_APP_SOURCES) $(ELM_PACKAGE_SOURCES)
 	cd elm-app && elm-tailwind-classes gen
 	mkdir -p elm-app/.elm-tailwind
 	touch $@
 
-build/.elm-stamp: elm-app/.elm-tailwind/.stamp $(ELM_APP_SOURCES) $(ELM_PACKAGE_SOURCES) elm-app/elm.json elm-app/vite.config.mjs elm-app/main.js elm-app/main.css
+build/.elm-stamp: elm-app/packages elm-app/.elm-tailwind/.stamp $(ELM_APP_SOURCES) $(ELM_PACKAGE_SOURCES) elm-app/elm.json elm-app/vite.config.mjs elm-app/main.js elm-app/main.css
 	cd elm-app && vite build
 	touch $@
 
@@ -56,7 +58,7 @@ build/.elm-stamp: elm-app/.elm-tailwind/.stamp $(ELM_APP_SOURCES) $(ELM_PACKAGE_
 elm-build: build/.elm-stamp ## Production build of Elm SPA → build/
 
 .PHONY: elm-test
-elm-test: elm-tailwind-gen ## Run Elm unit tests
+elm-test: elm-app/packages elm-tailwind-gen ## Run Elm unit tests
 	cd elm-app && elm-test
 
 .PHONY: elm-format
