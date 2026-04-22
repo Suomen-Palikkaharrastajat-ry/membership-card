@@ -259,15 +259,17 @@ viewLoginPrompt maybeError =
 viewCard : CardAssets -> Float -> String -> MemberInfo -> Html Msg
 viewCard assets animationMs accountUrl memberInfo =
     div
-        [ class "min-h-screen flex flex-col items-center justify-center gap-6 p-8" ]
-        [ div [ class "card-canvas-wrapper" ]
-            [ CardCanvas.view
-                { assets = assets
-                , onLogoLoaded = LogoTextureLoaded
-                , onFigureLoaded = FigureTextureLoaded
-                }
-                animationMs
-                memberInfo
+        [ class "card-page-container min-h-screen flex flex-col items-center justify-center gap-6 p-8" ]
+        [ div [ class "card-rotate-wrapper" ]
+            [ div [ class "card-canvas-wrapper" ]
+                [ CardCanvas.view
+                    { assets = assets
+                    , onLogoLoaded = LogoTextureLoaded
+                    , onFigureLoaded = FigureTextureLoaded
+                    }
+                    animationMs
+                    memberInfo
+                ]
             ]
         , div [ class "flex items-center gap-6" ]
             [ a

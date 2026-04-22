@@ -213,6 +213,44 @@ button[disabled] {
   width: 6px;
 }
 
+/* ── Mobile portrait: rotate card 90° to fill screen height ──────────────── */
+/*                                                                              */
+/* Card aspect ratio: 640/400 = 1.6 (landscape).                               */
+/* Strategy: size the card's long dimension to 70vh, rotate 90°.               */
+/*   Before rotation: width = 70vh, height = 70vh / 1.6 = 43.75vh             */
+/*   After  rotation: displayed width = 43.75vh, displayed height = 70vh       */
+/* The wrapper occupies the visual bounding box so flex layout stays correct.  */
+
+@media (orientation: portrait) and (max-width: 767px) {
+  .card-rotate-wrapper {
+    width: calc(70vh / 1.6); /* visual width of rotated card ≈ 43.75vh */
+    height: 70vh; /* visual height of rotated card */
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .card-rotate-wrapper .card-canvas-wrapper {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 70vh; /* card's long dimension before rotation */
+    max-width: none;
+    transform: translate(-50%, -50%) rotate(90deg);
+  }
+}
+
+/* ── Mobile landscape: prevent links from being clipped off-screen ────────── */
+/*                                                                              */
+/* In landscape a small phone cannot centre card + links in one viewport       */
+/* height. Switch to scroll-friendly top-alignment.                            */
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .card-page-container {
+    justify-content: flex-start;
+    overflow-y: auto;
+  }
+}
+
 .timeline-nav::-webkit-scrollbar-thumb {
   background-color: var(--color-border-default);
   border-radius: 3px;
