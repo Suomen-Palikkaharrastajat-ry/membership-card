@@ -1,56 +1,37 @@
 # Membership Card SPA
 
-A standalone Single Page Application built with SvelteKit and oidc-client-ts for OIDC authentication.
+Elm SPA for displaying a digital membership card.
 
-## Features
+## Stack
 
-- OIDC authentication with oidc-client-ts
-- Displays user profile and ID token details
-- Built as a standalone SPA using @sveltejs/adapter-static
-- Styled with Tailwind CSS
-- TypeScript support
+- Elm 0.19.1
+- Vite
+- Tailwind CSS v4
+- Keycloak OIDC (authorization code + PKCE)
+- `joakin/elm-canvas` for card rendering
 
-## Configuration
+## OIDC Configuration
 
-Before running the app, update the OIDC configuration in `src/lib/auth.ts`:
+Set these in `.env` at the repository root:
 
-```typescript
-const userManager = new UserManager({
-	authority: 'https://your-oidc-provider.com', // Your OIDC provider's authority URL
-	client_id: 'your-client-id', // Your client ID
-	redirect_uri: 'http://localhost:5173/callback', // Callback URL (update for production)
-	response_type: 'code',
-	scope: 'openid profile email'
-});
+```env
+VITE_OIDC_AUTHORITY=https://your-oidc-provider.com/auth/realms/your-realm
+VITE_OIDC_CLIENT_ID=your-client-id
+VITE_OIDC_REDIRECT_URI=http://localhost:5173/#/callback
 ```
 
 ## Development
 
 ```bash
-# Install dependencies
-npm install
-
-# Run development server
-npm run dev
+make develop
+make elm-dev
 ```
 
-## Build
+## Build and Test
 
 ```bash
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
+make elm-test
+make elm-build
 ```
 
-The built files will be in the `build/` directory, ready to be deployed to any static hosting service.
-
-## Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run check` - Run TypeScript checks
-- `npm run format` - Format code with Prettier
-- `npm run lint` - Lint code with ESLint
+Build output goes to `build/`.
