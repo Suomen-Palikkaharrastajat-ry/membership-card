@@ -31,11 +31,17 @@ decodeMemberInfo =
         (Json.oneOf [ Json.field "bricklink" Json.string, Json.succeed "" ])
         (Json.oneOf
             [ Json.field "registration_date" Json.string
+            , Json.field "registrationDate" Json.string
             , Json.field "effective_date" Json.string
             , Json.succeed ""
             ]
         )
-        (Json.oneOf [ Json.field "payment_date" Json.string, Json.succeed "" ])
+        (Json.oneOf
+            [ Json.field "payment_date" Json.string
+            , Json.field "paymentDate" Json.string
+            , Json.succeed ""
+            ]
+        )
 
 
 {-| Decode access token from OIDC token endpoint response.
@@ -63,18 +69,17 @@ restoreAuthFromFlags maybeMemberJson =
             NotAuthenticated
 
 
-{-| Parse callback query params from `window.location.search`, e.g. `?code=...&state=...`.
+{-| Parse callback query params from `Url.query` (e.g. `"code=...&state=..."`).
+Returns Nothing when the query is absent or either required param is missing.
 -}
-parseCallbackQuery : String -> Maybe CallbackQuery
-parseCallbackQuery currentSearch =
+parseCallbackQuery : Maybe String -> Maybe CallbackQuery
+parseCallbackQuery maybeQuery =
+    maybeQuery |> Maybe.andThen parseQueryString
+
+
+parseQueryString : String -> Maybe CallbackQuery
+parseQueryString query =
     let
-        query =
-            if String.startsWith "?" currentSearch then
-                String.dropLeft 1 currentSearch
-
-            else
-                currentSearch
-
         pairs =
             query
                 |> String.split "&"

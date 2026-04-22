@@ -1,8 +1,10 @@
-module Route exposing (Route(..), fromHash)
+module Route exposing (Route(..), fromUrl)
 
 {-| Minimal hash-based routing for the membership card SPA.
 Only two meaningful routes exist: the home page and the OIDC callback.
 -}
+
+import Url exposing (Url)
 
 
 type Route
@@ -11,23 +13,22 @@ type Route
     | RouteNotFound
 
 
-{-| Parse a URL hash fragment (e.g. "#/callback") into a Route.
-The hash string is provided by JS in the init flags.
+{-| Derive a Route from the current URL. Routing is done via the fragment (#).
 -}
-fromHash : String -> Route
-fromHash hash =
-    case hash of
-        "#/callback" ->
+fromUrl : Url -> Route
+fromUrl url =
+    case url.fragment of
+        Nothing ->
+            RouteHome
+
+        Just "" ->
+            RouteHome
+
+        Just "/" ->
+            RouteHome
+
+        Just "/callback" ->
             RouteCallback
-
-        "" ->
-            RouteHome
-
-        "#/" ->
-            RouteHome
-
-        "#" ->
-            RouteHome
 
         _ ->
             RouteNotFound

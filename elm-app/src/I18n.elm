@@ -5,6 +5,7 @@ module I18n exposing
     , kirjauduUlos
     , pageNotFound
     , pageTitle
+    , paivitatietosi
     )
 
 
@@ -36,3 +37,8 @@ authCallbackError =
 pageNotFound : String
 pageNotFound =
     "Sivua ei löydy."
+
+
+paivitatietosi : String
+paivitatietosi =
+    "Päivitä tietosi"

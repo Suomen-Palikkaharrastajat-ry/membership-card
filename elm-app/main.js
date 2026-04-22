@@ -18,18 +18,13 @@ const oidcRedirectUri =
 
 const storedMemberInfo = localStorage.getItem('mc_member_info') || null
 
-const flags = {
-  memberInfo: storedMemberInfo,
-  oidcAuthority,
-  oidcClientId,
-  oidcRedirectUri,
-  currentHash: window.location.hash,
-  currentSearch: window.location.search,
-}
-
 const app = Elm.Main.init({
-  node: document.getElementById('app'),
-  flags,
+  flags: {
+    memberInfo: storedMemberInfo,
+    oidcAuthority,
+    oidcClientId,
+    oidcRedirectUri,
+  },
 })
 
 // ── Auth ports ────────────────────────────────────────────────────────────────
@@ -58,11 +53,13 @@ app.ports.startLogin.subscribe(async ({ authority, clientId, redirectUri }) => {
   }
 })
 
+// Read PKCE params and immediately clear them so they can't be replayed.
 app.ports.getCallbackParams.subscribe(() => {
-  app.ports.callbackParams.send({
-    codeVerifier: sessionStorage.getItem('mc_code_verifier') || '',
-    state: sessionStorage.getItem('mc_provider_state') || '',
-  })
+  const codeVerifier = sessionStorage.getItem('mc_code_verifier') || ''
+  const state = sessionStorage.getItem('mc_provider_state') || ''
+  sessionStorage.removeItem('mc_code_verifier')
+  sessionStorage.removeItem('mc_provider_state')
+  app.ports.callbackParams.send({ codeVerifier, state })
 })
 
 app.ports.persistMemberInfo.subscribe((memberInfoJson) => {
@@ -73,34 +70,21 @@ app.ports.clearStoredMemberInfo.subscribe(() => {
   localStorage.removeItem('mc_member_info')
 })
 
-app.ports.clearCallbackUrl.subscribe(() => {
+app.ports.startLogout.subscribe(({ authority, clientId, postLogoutRedirectUri }) => {
+  localStorage.removeItem('mc_member_info')
   sessionStorage.removeItem('mc_code_verifier')
   sessionStorage.removeItem('mc_provider_state')
-  history.replaceState(null, '', '/')
-})
 
-app.ports.startLogout.subscribe(
-  ({ authority, clientId, postLogoutRedirectUri }) => {
-    localStorage.removeItem('mc_member_info')
-    sessionStorage.removeItem('mc_code_verifier')
-    sessionStorage.removeItem('mc_provider_state')
-
-    try {
-      const logoutUrl = new URL(
-        `${authority}/protocol/openid-connect/logout`
-      )
-      logoutUrl.searchParams.set('client_id', clientId)
-      logoutUrl.searchParams.set(
-        'post_logout_redirect_uri',
-        postLogoutRedirectUri
-      )
-      window.location.assign(logoutUrl.toString())
-    } catch (err) {
-      console.error('OIDC logout redirect failed:', err)
-      window.location.assign('/')
-    }
+  try {
+    const logoutUrl = new URL(`${authority}/protocol/openid-connect/logout`)
+    logoutUrl.searchParams.set('client_id', clientId)
+    logoutUrl.searchParams.set('post_logout_redirect_uri', postLogoutRedirectUri)
+    window.location.assign(logoutUrl.toString())
+  } catch (err) {
+    console.error('OIDC logout redirect failed:', err)
+    window.location.assign('/')
   }
-)
+})
 
 // ── PKCE helpers ──────────────────────────────────────────────────────────────
 

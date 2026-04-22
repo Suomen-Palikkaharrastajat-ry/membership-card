@@ -28,16 +28,17 @@ view :
     , onLogoLoaded : Maybe Texture -> msg
     , onFigureLoaded : Maybe Texture -> msg
     }
+    -> Float
     -> MemberInfo
     -> Html msg
-view options memberInfo =
+view options animationMs memberInfo =
     Canvas.toHtmlWith
         { width = round cardWidth
         , height = round cardHeight
         , textures = textureSources options
         }
         [ class "membership-card-canvas" ]
-        (baseRenderables
+        (baseRenderables animationMs
             ++ renderFigure options.assets.figure
             ++ renderLogo options.assets.logo
             ++ textRenderables memberInfo
@@ -67,36 +68,58 @@ textureSources options =
            )
 
 
-baseRenderables : List Canvas.Renderable
-baseRenderables =
+baseRenderables : Float -> List Canvas.Renderable
+baseRenderables animationMs =
     let
+        tSeconds =
+            animationMs / 1000
+
+        breathingPeriodSeconds =
+            11
+
+        breathingWave =
+            sin ((2 * pi * tSeconds) / breathingPeriodSeconds)
+
+        orbitPeriodSeconds =
+            14
+
+        orbitAngle =
+            (2 * pi * tSeconds) / orbitPeriodSeconds
+
         yellowRadius =
-            180
+            180 + (breathingWave * 6)
 
         blackRadius =
-            185
+            185 + (breathingWave * 9)
 
-        redRadius =
-            220
-
-        yellowCenterX =
+        yellowCenterXBase =
             cardWidth + 60 - (yellowRadius / 2)
 
-        blackCenterX =
+        blackCenterXBase =
             cardWidth - (blackRadius / 2)
 
-        -- Keep only ~1/4 inside the right edge, but move upward so it is visible.
-        redCenterX =
-            cardWidth + (redRadius / 2)
+        yellowOrbitRadius =
+            4
 
-        redCenterY =
-            redRadius / 3
+        blackOrbitRadius =
+            5
+
+        yellowCenterX =
+            yellowCenterXBase + (yellowOrbitRadius * cos orbitAngle)
+
+        yellowCenterY =
+            (cardHeight / 2) + (yellowOrbitRadius * sin orbitAngle)
+
+        blackCenterX =
+            blackCenterXBase + (blackOrbitRadius * cos (orbitAngle + (pi / 3)))
+
+        blackCenterY =
+            (cardHeight + 30) + (blackOrbitRadius * sin (orbitAngle + (pi / 3)))
     in
     [ Canvas.clear ( 0, 0 ) cardWidth cardHeight
     , Canvas.shapes [ fill white ] [ Canvas.rect ( 0, 0 ) cardWidth cardHeight ]
-    , Canvas.shapes [ fill blacktronRed ] [ Canvas.circle ( redCenterX, redCenterY ) redRadius ]
-    , Canvas.shapes [ fill brandYellow ] [ Canvas.circle ( yellowCenterX, cardHeight / 2 ) yellowRadius ]
-    , Canvas.shapes [ fill brandBlack ] [ Canvas.circle ( blackCenterX, cardHeight + 30 ) blackRadius ]
+    , Canvas.shapes [ fill brandYellow ] [ Canvas.circle ( yellowCenterX, yellowCenterY ) yellowRadius ]
+    , Canvas.shapes [ fill brandBlack ] [ Canvas.circle ( blackCenterX, blackCenterY ) blackRadius ]
     ]
 
 
@@ -203,10 +226,10 @@ textRenderables memberInfo =
             splitName memberInfo.name
 
         nameLine1Y =
-            104
+            148
 
         nameLine2Y =
-            140
+            nameLine1Y + 64
 
         registrationDate =
             DateUtils.formatDateForDisplay memberInfo.registrationDate
@@ -216,17 +239,20 @@ textRenderables memberInfo =
 
         datesStartY =
             if String.isEmpty nameLines.line2 then
-                140
+                nameLine2Y
 
             else
-                176
+                nameLine2Y + 36
 
         registrationEntry =
             if String.isEmpty registrationDate then
                 []
 
             else
-                [ ( "Jäsen alkaen: " ++ registrationDate, datesStartY ) ]
+                [ ( "Liittynyt: " ++ registrationDate, datesStartY ) ]
+
+        lineSpacing =
+            26
 
         expirationY =
             case registrationEntry of
@@ -234,7 +260,7 @@ textRenderables memberInfo =
                     datesStartY
 
                 _ ->
-                    datesStartY + 22
+                    datesStartY + lineSpacing
 
         expirationEntry =
             if String.isEmpty expirationDate then
@@ -249,7 +275,7 @@ textRenderables memberInfo =
                     datesStartY
 
                 ( _, y ) :: _ ->
-                    y + 22
+                    y + lineSpacing
 
         bricklinkEntry =
             if String.isEmpty memberInfo.bricklink then
@@ -258,7 +284,7 @@ textRenderables memberInfo =
             else
                 [ Canvas.text
                     [ fill brandBlack
-                    , Text.font { size = 14, family = "Outfit500, Outfit, sans-serif" }
+                    , Text.font { size = 17, family = "Outfit500, Outfit, sans-serif" }
                     ]
                     ( textX, bricklinkY )
                     ("BrickLink: " ++ memberInfo.bricklink)
@@ -269,7 +295,7 @@ textRenderables memberInfo =
                 (\( line, y ) ->
                     Canvas.text
                         [ fill mutedText
-                        , Text.font { size = 14, family = "Outfit400, Outfit, sans-serif" }
+                        , Text.font { size = 17, family = "Outfit400, Outfit, sans-serif" }
                         ]
                         ( textX, y )
                         line
@@ -308,12 +334,35 @@ textRenderables memberInfo =
 splitName : String -> { line1 : String, line2 : String }
 splitName name =
     let
-        parts =
-            String.words name
+        -- Greedy word-wrap: keep adding words to line1 until it would exceed
+        -- 60% of the card width. Approximates Outfit Bold at 32pt as 19px/char.
+        maxPx =
+            cardWidth * 0.6
+
+        approxPx str =
+            toFloat (String.length str) * 19
+
+        go words acc =
+            case words of
+                [] ->
+                    { line1 = acc, line2 = "" }
+
+                w :: rest ->
+                    let
+                        candidate =
+                            if String.isEmpty acc then
+                                w
+
+                            else
+                                acc ++ " " ++ w
+                    in
+                    if approxPx candidate <= maxPx || String.isEmpty acc then
+                        go rest candidate
+
+                    else
+                        { line1 = acc, line2 = String.join " " (w :: rest) }
     in
-    { line1 = parts |> List.take 2 |> String.join " "
-    , line2 = parts |> List.drop 2 |> String.join " "
-    }
+    go (String.words name) ""
 
 
 white : Color.Color
@@ -329,11 +378,6 @@ brandYellow =
 brandBlack : Color.Color
 brandBlack =
     Color.rgb255 5 19 29
-
-
-blacktronRed : Color.Color
-blacktronRed =
-    Color.rgb255 201 26 9
 
 
 mutedText : Color.Color

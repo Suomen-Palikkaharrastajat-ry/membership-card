@@ -2,7 +2,10 @@ module Main exposing (main)
 
 import Auth
 import Browser
+import Browser.Events
+import Browser.Navigation as Nav
 import CardCanvas
+import FeatherIcons
 import Html exposing (Html, a, button, div, p, span, text)
 import Html.Attributes exposing (class, href)
 import Html.Events exposing (onClick)
@@ -10,7 +13,6 @@ import I18n
 import Json.Encode as Encode
 import Ports
 import Route exposing (Route(..))
-import String
 import Types
     exposing
         ( AuthState(..)
@@ -21,26 +23,29 @@ import Types
         , Msg(..)
         , Page(..)
         )
+import Url exposing (Url)
 
 
 main : Program Flags Model Msg
 main =
-    Browser.element
+    Browser.application
         { init = init
         , update = update
-        , view = view
+        , view = \model -> { title = I18n.pageTitle, body = [ view model ] }
         , subscriptions = subscriptions
+        , onUrlRequest = UrlRequested
+        , onUrlChange = UrlChanged
         }
 
 
-init : Flags -> ( Model, Cmd Msg )
-init flags =
+init : Flags -> Url -> Nav.Key -> ( Model, Cmd Msg )
+init flags url key =
     let
         authState =
             Auth.restoreAuthFromFlags flags.memberInfo
 
         page =
-            case Route.fromHash flags.currentHash of
+            case Route.fromUrl url of
                 RouteCallback ->
                     PageCallback
 
@@ -60,12 +65,14 @@ init flags =
             { page = page
             , authState = authState
             , oidc = oidc
-            , currentSearch = flags.currentSearch
+            , navKey = key
+            , callbackQuery = url.query
             , callbackError = Nothing
             , cardAssets =
                 { logo = Nothing
                 , figure = Nothing
                 }
+            , animationMs = 0
             }
 
         initCmd =
@@ -99,8 +106,32 @@ update msg model =
                 ]
             )
 
+        UrlRequested (Browser.Internal url) ->
+            ( model, Nav.pushUrl model.navKey (Url.toString url) )
+
+        UrlRequested (Browser.External href) ->
+            ( model, Nav.load href )
+
+        UrlChanged url ->
+            let
+                page =
+                    case Route.fromUrl url of
+                        RouteCallback ->
+                            PageCallback
+
+                        RouteHome ->
+                            PageHome
+
+                        RouteNotFound ->
+                            PageNotFound
+            in
+            ( { model | page = page, callbackQuery = url.query }, Cmd.none )
+
+        AnimationFrame deltaMs ->
+            ( { model | animationMs = model.animationMs + deltaMs }, Cmd.none )
+
         CallbackParamsReceived params ->
-            case Auth.parseCallbackQuery model.currentSearch of
+            case Auth.parseCallbackQuery model.callbackQuery of
                 Nothing ->
                     callbackFailed model
 
@@ -128,7 +159,7 @@ update msg model =
                     ( { model | authState = Authenticated info, page = PageHome, callbackError = Nothing }
                     , Cmd.batch
                         [ Ports.persistMemberInfo (encodeMemberInfo info)
-                        , Ports.clearCallbackUrl ()
+                        , Nav.replaceUrl model.navKey "/#/"
                         ]
                     )
 
@@ -157,8 +188,24 @@ update msg model =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =
-    Ports.callbackParams CallbackParamsReceived
+subscriptions model =
+    let
+        callbackSub =
+            if model.page == PageCallback then
+                Ports.callbackParams CallbackParamsReceived
+
+            else
+                Sub.none
+
+        breathingSub =
+            case ( model.page, model.authState ) of
+                ( PageHome, Authenticated _ ) ->
+                    Browser.Events.onAnimationFrameDelta AnimationFrame
+
+                _ ->
+                    Sub.none
+    in
+    Sub.batch [ callbackSub, breathingSub ]
 
 
 view : Model -> Html Msg
@@ -181,7 +228,7 @@ viewHome model =
             viewLoginPrompt model.callbackError
 
         Authenticated info ->
-            viewCard model.cardAssets info
+            viewCard model.cardAssets model.animationMs (model.oidc.authority ++ "/account/") info
 
 
 viewLoginPrompt : Maybe String -> Html Msg
@@ -200,15 +247,17 @@ viewLoginPrompt maybeError =
             Nothing ->
                 text ""
         , button
-            [ class "btn-primary flex items-center gap-2 type-body px-6 py-3"
+            [ class "btn-primary type-body px-6 py-3 whitespace-nowrap"
             , onClick LoginClicked
             ]
-            [ text I18n.kirjaudu ]
+            [ FeatherIcons.logIn |> FeatherIcons.withSize 18 |> FeatherIcons.toHtml []
+            , text I18n.kirjaudu
+            ]
         ]
 
 
-viewCard : CardAssets -> MemberInfo -> Html Msg
-viewCard assets memberInfo =
+viewCard : CardAssets -> Float -> String -> MemberInfo -> Html Msg
+viewCard assets animationMs accountUrl memberInfo =
     div
         [ class "min-h-screen flex flex-col items-center justify-center gap-6 p-8" ]
         [ div [ class "card-canvas-wrapper" ]
@@ -217,13 +266,25 @@ viewCard assets memberInfo =
                 , onLogoLoaded = LogoTextureLoaded
                 , onFigureLoaded = FigureTextureLoaded
                 }
+                animationMs
                 memberInfo
             ]
-        , button
-            [ class "type-body-small text-text-muted hover:text-text-on-dark transition-colors"
-            , onClick LogoutClicked
+        , div [ class "flex items-center gap-6" ]
+            [ a
+                [ href accountUrl
+                , class "flex items-center gap-1 type-body-small text-text-muted hover:text-text-on-dark transition-colors"
+                ]
+                [ FeatherIcons.externalLink |> FeatherIcons.withSize 14 |> FeatherIcons.toHtml []
+                , text I18n.paivitatietosi
+                ]
+            , button
+                [ class "flex items-center gap-1 type-body-small text-text-muted hover:text-text-on-dark transition-colors"
+                , onClick LogoutClicked
+                ]
+                [ FeatherIcons.logOut |> FeatherIcons.withSize 14 |> FeatherIcons.toHtml []
+                , text I18n.kirjauduUlos
+                ]
             ]
-            [ text I18n.kirjauduUlos ]
         ]
 
 
@@ -252,7 +313,7 @@ callbackFailed model =
     ( { model | authState = NotAuthenticated, page = PageHome, callbackError = Just I18n.authCallbackError }
     , Cmd.batch
         [ Ports.clearStoredMemberInfo ()
-        , Ports.clearCallbackUrl ()
+        , Nav.replaceUrl model.navKey "/#/"
         ]
     )
 

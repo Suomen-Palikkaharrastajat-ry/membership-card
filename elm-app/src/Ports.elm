@@ -1,6 +1,5 @@
 port module Ports exposing
     ( callbackParams
-    , clearCallbackUrl
     , clearStoredMemberInfo
     , getCallbackParams
     , persistMemberInfo
@@ -37,6 +36,7 @@ port startLogout : { authority : String, clientId : String, postLogoutRedirectUr
 
 
 {-| Request PKCE callback parameters stored in sessionStorage.
+The JS handler reads and immediately clears the stored values.
 -}
 port getCallbackParams : () -> Cmd msg
 
@@ -44,8 +44,3 @@ port getCallbackParams : () -> Cmd msg
 {-| Receive PKCE callback parameters (code verifier + state) from JS.
 -}
 port callbackParams : (CallbackParams -> msg) -> Sub msg
-
-
-{-| Clear callback URL artifacts without page reload.
--}
-port clearCallbackUrl : () -> Cmd msg

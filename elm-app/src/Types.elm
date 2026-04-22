@@ -11,8 +11,11 @@ module Types exposing
     , isAuthenticated
     )
 
+import Browser
+import Browser.Navigation as Nav
 import Canvas.Texture exposing (Texture)
 import Http
+import Url exposing (Url)
 
 
 
@@ -24,8 +27,6 @@ type alias Flags =
     , oidcAuthority : String
     , oidcClientId : String
     , oidcRedirectUri : String
-    , currentHash : String
-    , currentSearch : String
     }
 
 
@@ -98,9 +99,11 @@ type alias Model =
     { page : Page
     , authState : AuthState
     , oidc : OidcConfig
-    , currentSearch : String
+    , navKey : Nav.Key
+    , callbackQuery : Maybe String
     , callbackError : Maybe String
     , cardAssets : CardAssets
+    , animationMs : Float
     }
 
 
@@ -111,6 +114,9 @@ type alias Model =
 type Msg
     = LoginClicked
     | LogoutClicked
+    | UrlRequested Browser.UrlRequest
+    | UrlChanged Url
+    | AnimationFrame Float
     | CallbackParamsReceived CallbackParams
     | GotTokenResponse (Result Http.Error String)
     | GotUserInfoResponse (Result Http.Error MemberInfo)

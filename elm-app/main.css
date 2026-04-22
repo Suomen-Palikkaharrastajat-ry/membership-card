@@ -94,7 +94,7 @@ button[disabled] {
 
 /* Primary action button */
 .btn-primary {
-  @apply inline-block px-4 py-2 bg-brand text-white rounded hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2;
+  @apply inline-flex items-center gap-2 px-4 py-2 bg-brand text-white rounded hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2;
 }
 
 /* ── Card canvas container ───────────────────────────────────────────────── */

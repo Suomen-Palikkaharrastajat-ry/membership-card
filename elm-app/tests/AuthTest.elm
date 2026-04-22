@@ -85,7 +85,7 @@ suite =
         , describe "parseCallbackQuery"
             [ test "parses code and state from callback search" <|
                 \_ ->
-                    case Auth.parseCallbackQuery "?code=abc&state=def" of
+                    case Auth.parseCallbackQuery (Just "code=abc&state=def") of
                         Just query ->
                             Expect.all
                                 [ \q -> Expect.equal "abc" q.code
@@ -97,7 +97,7 @@ suite =
                             Expect.fail "Expected callback query to parse"
             , test "decodes URL-encoded callback params" <|
                 \_ ->
-                    case Auth.parseCallbackQuery "?code=ab%2Bc%2F1&state=s%20t" of
+                    case Auth.parseCallbackQuery (Just "code=ab%2Bc%2F1&state=s%20t") of
                         Just query ->
                             Expect.all
                                 [ \q -> Expect.equal "ab+c/1" q.code
@@ -109,7 +109,10 @@ suite =
                             Expect.fail "Expected callback query to parse"
             , test "fails when state is missing" <|
                 \_ ->
-                    Expect.equal Nothing (Auth.parseCallbackQuery "?code=abc")
+                    Expect.equal Nothing (Auth.parseCallbackQuery (Just "code=abc"))
+            , test "fails when query is absent" <|
+                \_ ->
+                    Expect.equal Nothing (Auth.parseCallbackQuery Nothing)
             ]
         , describe "restoreAuthFromFlags"
             [ test "restores Authenticated state from valid JSON string" <|
