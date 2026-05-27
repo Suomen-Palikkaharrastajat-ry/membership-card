@@ -48,9 +48,9 @@ suite =
                     Expect.equal "March 5, 2024" (DateUtils.formatDateForDisplay "March 5, 2024")
             ]
         , describe "calculateExpirationDate"
-            [ test "uses payment year when not paid on 31.12" <|
+            [ test "uses next year from payment date" <|
                 \_ ->
-                    Expect.equal "31.12.2027" (DateUtils.calculateExpirationDate "2027-01-15")
+                    Expect.equal "31.12.2028" (DateUtils.calculateExpirationDate "2027-01-15")
             , test "uses next year when paid on 31.12" <|
                 \_ ->
                     Expect.equal "31.12.2028" (DateUtils.calculateExpirationDate "31.12.2027")

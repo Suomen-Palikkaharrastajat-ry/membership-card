@@ -233,27 +233,33 @@ viewHome model =
 
 viewLoginPrompt : Maybe String -> Html Msg
 viewLoginPrompt maybeError =
+    let
+        errorContent =
+            case maybeError of
+                Just err ->
+                    [ p [ class "type-body text-brand-yellow" ] [ text err ] ]
+
+                Nothing ->
+                    []
+    in
     div
         [ class "min-h-screen flex flex-col items-center justify-center gap-8 p-8" ]
-        [ div [ class "flex flex-col items-center gap-2" ]
+        ([ div [ class "flex flex-col items-center gap-2" ]
             [ span [ class "type-h2 text-text-on-dark" ] [ text I18n.pageTitle ]
             , span [ class "type-body text-text-muted" ]
-                [ text "Suomen Palikkaharrastajat ry" ]
+                [ text I18n.organizationName ]
             ]
-        , case maybeError of
-            Just err ->
-                p [ class "type-body text-brand-yellow" ] [ text err ]
-
-            Nothing ->
-                text ""
-        , button
-            [ class "btn-primary type-body px-6 py-3 whitespace-nowrap"
-            , onClick LoginClicked
-            ]
-            [ FeatherIcons.logIn |> FeatherIcons.withSize 18 |> FeatherIcons.toHtml []
-            , text I18n.kirjaudu
-            ]
-        ]
+         ]
+            ++ errorContent
+            ++ [ button
+                    [ class "btn-primary type-body px-6 py-3 whitespace-nowrap"
+                    , onClick LoginClicked
+                    ]
+                    [ FeatherIcons.logIn |> FeatherIcons.withSize 18 |> FeatherIcons.toHtml []
+                    , text I18n.kirjaudu
+                    ]
+               ]
+        )
 
 
 viewCard : CardAssets -> Float -> String -> MemberInfo -> Html Msg
@@ -303,10 +309,10 @@ viewNotFound : Html Msg
 viewNotFound =
     div
         [ class "min-h-screen flex flex-col items-center justify-center gap-4" ]
-        [ p [ class "type-h2 text-text-on-dark" ] [ text "404" ]
+        [ p [ class "type-h2 text-text-on-dark" ] [ text I18n.notFoundStatus ]
         , p [ class "type-body text-text-muted" ] [ text I18n.pageNotFound ]
         , a [ href "/", class "type-body text-brand-yellow hover:underline" ]
-            [ text "← Etusivu" ]
+            [ text I18n.etusivu ]
         ]
 
 

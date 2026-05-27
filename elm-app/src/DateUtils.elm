@@ -56,11 +56,7 @@ calculateExpirationDate paymentDateValue =
         Just parts ->
             let
                 candidateYear =
-                    if parts.month == 12 && parts.day == 31 then
-                        parts.year + 1
-
-                    else
-                        parts.year
+                    parts.year + 1
 
                 expirationYear =
                     max candidateYear minimumYear

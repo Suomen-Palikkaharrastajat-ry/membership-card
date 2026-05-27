@@ -6,7 +6,7 @@ import elm from 'vite-plugin-elm'
 export default defineConfig({
   plugins: [
     elmTailwind(),
-    elm(),
+    elm({debug: false}),
     tailwindcss(),
   ],
   publicDir: 'public',

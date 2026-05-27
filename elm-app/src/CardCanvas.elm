@@ -9,6 +9,7 @@ import Color
 import DateUtils
 import Html exposing (Html)
 import Html.Attributes exposing (class)
+import I18n
 import String
 import Types exposing (CardAssets, MemberInfo)
 
@@ -87,10 +88,10 @@ baseRenderables animationMs =
             (2 * pi * tSeconds) / orbitPeriodSeconds
 
         yellowRadius =
-            180 + (breathingWave * 6)
+            180 + (breathingWave * 18)
 
         blackRadius =
-            185 + (breathingWave * 9)
+            185 + (breathingWave * 24)
 
         yellowCenterXBase =
             cardWidth + 60 - (yellowRadius / 2)
@@ -99,10 +100,10 @@ baseRenderables animationMs =
             cardWidth - (blackRadius / 2)
 
         yellowOrbitRadius =
-            4
+            18
 
         blackOrbitRadius =
-            5
+            22
 
         yellowCenterX =
             yellowCenterXBase + (yellowOrbitRadius * cos orbitAngle)
@@ -234,6 +235,9 @@ textRenderables memberInfo =
         registrationDate =
             DateUtils.formatDateForDisplay memberInfo.registrationDate
 
+        paymentDate =
+            DateUtils.formatDateForDisplay memberInfo.paymentDate
+
         expirationDate =
             DateUtils.calculateExpirationDate memberInfo.paymentDate
 
@@ -242,19 +246,19 @@ textRenderables memberInfo =
                 nameLine2Y
 
             else
-                nameLine2Y + 36
+                nameLine2Y + 26
 
         registrationEntry =
             if String.isEmpty registrationDate then
                 []
 
             else
-                [ ( "Liittynyt: " ++ registrationDate, datesStartY ) ]
+                [ ( I18n.liittynytLabel ++ registrationDate, datesStartY ) ]
 
         lineSpacing =
-            26
+            23
 
-        expirationY =
+        paymentY =
             case registrationEntry of
                 [] ->
                     datesStartY
@@ -262,15 +266,30 @@ textRenderables memberInfo =
                 _ ->
                     datesStartY + lineSpacing
 
+        paymentEntry =
+            if String.isEmpty paymentDate then
+                []
+
+            else
+                [ ( I18n.maksettuLabel ++ paymentDate, paymentY ) ]
+
+        expirationY =
+            case List.reverse (registrationEntry ++ paymentEntry) of
+                [] ->
+                    datesStartY
+
+                ( _, y ) :: _ ->
+                    y + lineSpacing
+
         expirationEntry =
             if String.isEmpty expirationDate then
                 []
 
             else
-                [ ( "Voimassa: " ++ expirationDate, expirationY ) ]
+                [ ( I18n.voimassaLabel ++ expirationDate, expirationY ) ]
 
         bricklinkY =
-            case List.reverse (registrationEntry ++ expirationEntry) of
+            case List.reverse (registrationEntry ++ paymentEntry ++ expirationEntry) of
                 [] ->
                     datesStartY
 
@@ -287,7 +306,7 @@ textRenderables memberInfo =
                     , Text.font { size = 17, family = "Outfit500, Outfit, sans-serif" }
                     ]
                     ( textX, bricklinkY )
-                    ("BrickLink: " ++ memberInfo.bricklink)
+                    (I18n.bricklinkLabel ++ memberInfo.bricklink)
                 ]
 
         dateRenderables =
@@ -300,14 +319,14 @@ textRenderables memberInfo =
                         ( textX, y )
                         line
                 )
-                (registrationEntry ++ expirationEntry)
+                (registrationEntry ++ paymentEntry ++ expirationEntry)
     in
     [ Canvas.text
         [ fill brandBlack
         , Text.font { size = 28, family = "Outfit700, Outfit, sans-serif" }
         ]
         ( textX, 52 )
-        "JÄSENKORTTI"
+        I18n.cardTitle
     , Canvas.text
         [ fill brandBlack
         , Text.font { size = 32, family = "Outfit700, Outfit, sans-serif" }

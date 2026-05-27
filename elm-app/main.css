@@ -100,8 +100,9 @@ button[disabled] {
 /* ── Card canvas container ───────────────────────────────────────────────── */
 
 .card-canvas-wrapper {
-  width: 80vw;
+  width: min(80vw, calc((100vh - 9rem) * 1.6), 640px);
   max-width: 640px;
+  aspect-ratio: 640 / 400;
   border-radius: 0.75rem;
   overflow: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
@@ -111,7 +112,8 @@ button[disabled] {
 .card-canvas-wrapper elm-canvas,
 .card-canvas-wrapper .membership-card-canvas {
   display: block;
-  width: 100%;
+  width: 100% !important;
+  height: 100% !important;
   border: none;
 }
 
@@ -213,19 +215,13 @@ button[disabled] {
   width: 6px;
 }
 
-/* ── Mobile portrait: rotate card 90° to fill screen height ──────────────── */
-/*                                                                              */
-/* Card aspect ratio: 640/400 = 1.6 (landscape).                               */
-/* Strategy: size the card's long dimension to 70vh, rotate 90°.               */
-/*   Before rotation: width = 70vh, height = 70vh / 1.6 = 43.75vh             */
-/*   After  rotation: displayed width = 43.75vh, displayed height = 70vh       */
-/* The wrapper occupies the visual bounding box so flex layout stays correct.  */
+/* ── Mobile portrait: rotate card 90° while keeping it inside viewport ────── */
 
 @media (orientation: portrait) and (max-width: 767px) {
-  /* After rotation: displayed width = 80vw, displayed height = 80vw * 1.6 */
   .card-rotate-wrapper {
-    width: 80vw;
-    height: calc(80vw * 1.6);
+    --rotated-card-width: min(78vw, calc((100vh - 9rem) / 1.6));
+    width: var(--rotated-card-width);
+    height: calc(var(--rotated-card-width) * 1.6);
     position: relative;
     flex-shrink: 0;
   }
@@ -234,7 +230,7 @@ button[disabled] {
     position: absolute;
     top: 50%;
     left: 50%;
-    width: calc(80vw * 1.6); /* card's long dimension before rotation */
+    width: calc(var(--rotated-card-width) * 1.6);
     max-width: none;
     transform: translate(-50%, -50%) rotate(90deg);
   }
