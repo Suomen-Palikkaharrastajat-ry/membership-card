@@ -218,6 +218,10 @@ button[disabled] {
 /* ── Mobile portrait: rotate card 90° while keeping it inside viewport ────── */
 
 @media (orientation: portrait) and (max-width: 767px) {
+  .card-page-container {
+    padding-top: 1rem;
+  }
+
   .card-rotate-wrapper {
     --rotated-card-width: min(78vw, calc((100vh - 9rem) / 1.6));
     width: var(--rotated-card-width);

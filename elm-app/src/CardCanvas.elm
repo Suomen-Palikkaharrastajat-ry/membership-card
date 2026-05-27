@@ -243,10 +243,10 @@ textRenderables memberInfo =
 
         datesStartY =
             if String.isEmpty nameLines.line2 then
-                nameLine2Y
+                nameLine2Y - 8
 
             else
-                nameLine2Y + 26
+                nameLine2Y + 18
 
         registrationEntry =
             if String.isEmpty registrationDate then
@@ -294,7 +294,7 @@ textRenderables memberInfo =
                     datesStartY
 
                 ( _, y ) :: _ ->
-                    y + lineSpacing
+                    y + lineSpacing * 2
 
         bricklinkEntry =
             if String.isEmpty memberInfo.bricklink then
