@@ -215,9 +215,10 @@ button[disabled] {
   width: 6px;
 }
 
-/* ── Mobile portrait: rotate card 90° while keeping it inside viewport ────── */
+/* ── Mobile: keep the portrait-style rotated card inside viewport ─────────── */
 
-@media (orientation: portrait) and (max-width: 767px) {
+@media (orientation: portrait) and (max-width: 767px),
+  (pointer: coarse) and (orientation: landscape) and (max-height: 500px) {
   .card-page-container {
     padding-top: 1rem;
   }
